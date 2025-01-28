@@ -1,10 +1,8 @@
 bl_info = {
-    "name" : "LTCX Export",
-    "blender" : (2, 80, 0),
+    "name" : "Export ntop lctx files (.ltcx)",
+    "blender" : (2, 10, 0),
     "category" : "Import-Export",
-
 }
-
 
 import bpy
 import bmesh
@@ -15,6 +13,59 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 
+
+class ExportLtcx(Operator, ExportHelper):
+    """This appears in the tooltip of the operator and in the generated docs"""
+    bl_idname = "export_mesh.ltcx"  # important since its how bpy.ops.import_test.some_data is constructed
+    bl_label = "Export ltcx file"
+    bl_description = "Save the current object to ltcx"
+    filename_ext = ".ltcx"
+
+    filter_glob: StringProperty(
+        default="*.ltcx",
+        options={'HIDDEN'},
+        maxlen=255,  # Max internal buffer length, longer would be clamped.
+    ) # type: ignore
+
+    
+    #Dropdown menu for units
+    units: EnumProperty(
+        name="Units",
+        description="Choose lattice units",
+        items=(
+            ('mm', "mm", "Sets units to millimeters"),
+            ('cm', "cm", "Sets units to centimeters"),
+            ('in', "in", "Sets units to inches"),
+        ),
+        default='mm',
+    ) # type: ignore
+
+    #Dropdown menu for type
+    type: EnumProperty(
+        name="Type",
+        description="Choose node and beam type",
+        items=(
+            ('rnd', "Round", "Sets type to round"),
+            ('sqr', "Square", "Sets type to square"),
+        ),
+        default='rnd',
+    ) # type: ignore
+    
+
+    def execute(self, context):
+        #Get the currently selected object
+        me = bpy.context.object.data
+        
+        #Create a bmesh from the currently selected mesh, this helps get edge and vertex data
+        bm = bmesh.new()
+        bm.from_mesh(me)
+
+        return write_some_data(bm, context, self.filepath, self.type)
+
+
+# Only needed if you want to add into a dynamic menu
+def menu_func_export(self, context):
+    self.layout.operator(ExportLtcx.bl_idname, text="LTCX file (.ltcx)")
 
 #Takes a blender node object and returns a nodegroup string
 def vert_to_node(vert):
@@ -68,50 +119,6 @@ def write_some_data(bm, context, filepath, type):
     f.close()
 
     return {'FINISHED'}
-
-
-class ExportLtcx(Operator, ExportHelper):
-    """This appears in the tooltip of the operator and in the generated docs"""
-    bl_idname = "export_ltcx.lattice"  # important since its how bpy.ops.import_test.some_data is constructed
-    bl_label = "Export ltcx file"
-
-    # ExportHelper mix-in class uses this.
-    filename_ext = ".ltcx"
-
-    filter_glob: StringProperty(
-        default="*.ltcx",
-        options={'HIDDEN'},
-        maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )
-
-    
-    #Example property with dropdown menu
-    type: EnumProperty(
-        name="Units",
-        description="Choose lattice units",
-        items=(
-            ('mm', "mm", "Sets units to millimeters"),
-            ('cm', "cm", "Sets units to centimeters"),
-            ('in', "in", "Sets units to inches"),
-        ),
-        default='mm',
-    )
-    
-
-    def execute(self, context):
-        #Get the currently selected object
-        me = bpy.context.object.data
-        
-        #Create a bmesh from the currently selected mesh, this helps get edge and vertex data
-        bm = bmesh.new()
-        bm.from_mesh(me)
-
-        return write_some_data(bm, context, self.filepath, self.type)
-
-
-# Only needed if you want to add into a dynamic menu
-def menu_func_export(self, context):
-    self.layout.operator(ExportLtcx.bl_idname, text="LTCX file (.ltcx)")
 
 
 # Register and add to the "file selector" menu (required to use F3 search "Text Export Operator" for quick access).
