@@ -73,7 +73,7 @@ def vert_to_node(vert):
     y = str(vert.co.y)
     z = str(vert.co.z)
     
-    return('\n\t\t<node id="' + str(vert.index) + '" x="' + x + '" y="' + y + '" z="' + z + '"/>')
+    return('\n\t\t<node id="' + str(vert.index) + '" x="' + x + '" y="' + y + '" z="' + z + '" rad="1."/>')
     
 #Takes a blender edge object and returns a beamgroup string
 #n1 and n2 represent the vertex indices
@@ -87,14 +87,14 @@ def ltcx_settings(name, units, type):
     return('\n<graph id="0" name="' + name + '" units="' + units + '" type="' + type + '">')
 
 #use this section to write to file
-def write_some_data(bm, context, filepath, type):
+def write_some_data(bm, context, filepath, units, type):
     print("running ltcx exporter...")
     f = open(filepath, 'w', encoding='utf-8')
     
     #Write Header and settings
     f.write('<?xml version="1.0" encoding="utf-8"?>')
     f.write('\n<!---->')
-    f.write(ltcx_settings("cube unit", type, "rnd"))
+    f.write(ltcx_settings("cube unit", units, type))
     
     
     vertCount = 0
