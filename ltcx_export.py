@@ -1,3 +1,11 @@
+bl_info = {
+    "name" : "LTCX Export",
+    "blender" : (2, 80, 0),
+    "category" : "Import-Export",
+
+}
+
+
 import bpy
 import bmesh
 
