@@ -1,19 +1,34 @@
 import bpy
+import bmesh
+
+# ExportHelper is a helper class, defines filename and
+# invoke() function which calls the file selector.
+from bpy_extras.io_utils import ExportHelper
+from bpy.props import StringProperty, BoolProperty, EnumProperty
+from bpy.types import Operator
 
 
 #Takes a blender node object and returns a nodegroup string
-def vert_to_node(node, id):
-    return('\n\t\t<node id="' + str(id) + '" x="-1" y="-1" z="-1"/>')
+def vert_to_node(vert):
+    x = str(vert.co.x)
+    y = str(vert.co.y)
+    z = str(vert.co.z)
+    
+    return('\n\t\t<node id="' + str(vert.index) + '" x="' + x + '" y="' + y + '" z="' + z + '"/>')
     
 #Takes a blender edge object and returns a beamgroup string
-def edge_to_beam(beam, id):
-    return('\n\t\t<beam id="' + str(id) + '" n1="0" n2="1"/>')
+#n1 and n2 represent the vertex indices
+def edge_to_beam(edge):
+    v1 = str(str(edge.verts[0].index))
+    v2 = str(str(edge.verts[1].index))   
+    
+    return('\n\t\t<beam id="' + str(edge.index) + '" n1="' + v1 + '" n2="' + v2 + '"/>')
 
 def ltcx_settings(name, units, type):
     return('\n<graph id="0" name="' + name + '" units="' + units + '" type="' + type + '">')
 
 #use this section to write to file
-def write_some_data(context, filepath, type):
+def write_some_data(bm, context, filepath, type):
     print("running ltcx exporter...")
     f = open(filepath, 'w', encoding='utf-8')
     
@@ -23,16 +38,21 @@ def write_some_data(context, filepath, type):
     f.write(ltcx_settings("cube unit", type, "rnd"))
     
     
-    #Write lines for Nodes
+    vertCount = 0
+    edgeCount = 0
+    #Write lines for Nodes    
     f.write('\n\t<nodegroup>')
-    for x in range(5):
-        f.write(vert_to_node(1,x))   
+    for v in bm.verts:
+        f.write(vert_to_node(v))
+        vertCount+1  
     f.write('\n\t</nodegroup>')
+    
     
     #Write lines for beams
     f.write('\n\t<beamgroup>')
-    for x in range(5):
-        f.write(edge_to_beam(1,x))   
+    for e in bm.edges:
+        f.write(edge_to_beam(e))
+        edgeCount+1    
     f.write('\n\t</beamgroup>')
     
     f.write('\n</graph>')
@@ -40,13 +60,6 @@ def write_some_data(context, filepath, type):
     f.close()
 
     return {'FINISHED'}
-
-
-# ExportHelper is a helper class, defines filename and
-# invoke() function which calls the file selector.
-from bpy_extras.io_utils import ExportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty
-from bpy.types import Operator
 
 
 class ExportLtcx(Operator, ExportHelper):
@@ -61,16 +74,6 @@ class ExportLtcx(Operator, ExportHelper):
         default="*.ltcx",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
-    )
-
-
-
-    # List of operator properties, the attributes will be assigned
-    # to the class instance from the operator settings before calling.
-    use_setting: BoolProperty(
-        name="Example Boolean",
-        description="Example Tooltip",
-        default=True,
     )
 
     
@@ -88,7 +91,14 @@ class ExportLtcx(Operator, ExportHelper):
     
 
     def execute(self, context):
-        return write_some_data(context, self.filepath, self.type)
+        #Get the currently selected object
+        me = bpy.context.object.data
+        
+        #Create a bmesh from the currently selected mesh, this helps get edge and vertex data
+        bm = bmesh.new()
+        bm.from_mesh(me)
+
+        return write_some_data(bm, context, self.filepath, self.type)
 
 
 # Only needed if you want to add into a dynamic menu
