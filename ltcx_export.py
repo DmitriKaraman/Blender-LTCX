@@ -60,7 +60,7 @@ class ExportLtcx(Operator, ExportHelper):
         bm = bmesh.new()
         bm.from_mesh(me)
 
-        return write_some_data(bm, context, self.filepath, self.type)
+        return write_some_data(bm, context, self.filepath, self.units, self.type)
 
 
 # Only needed if you want to add into a dynamic menu
